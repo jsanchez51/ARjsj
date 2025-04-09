@@ -2,14 +2,38 @@
 <html>
   <head>
     <title>Demo AR</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <style>
+      #ar-error {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        padding: 20px;
+        background: #ffebee;
+        color: #c62828;
+        text-align: center;
+        z-index: 1000;
+      }
+      #retry-button {
+        margin-top: 10px;
+        padding: 8px 16px;
+        background: #c62828;
+        color: white;
+        border: none;
+        border-radius: 4px;
+      }
+    </style>
   </head>
   <body style="margin: 0; overflow: hidden;">
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: true;">
+    <div id="ar-error"></div>
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; maxDetectionRate: 30;">
       <!-- Definimos un marcador -->
-      <a-marker preset="hiro">
-        <!-- Agregamos un toroide 3D que rotará en 3 ejes -->
+      <a-marker preset="hiro" emitevents="true">
+        <!-- Modelo optimizado para móviles -->
         <a-torus position="0 0.5 0" 
                 radius="0.4" 
                 radius-tubular="0.1" 
@@ -18,8 +42,44 @@
         </a-torus>
       </a-marker>
       
-      <!-- Agregamos la cámara -->
-      <a-entity camera></a-entity>
+      <!-- Cámara optimizada -->
+      <a-entity camera="fov: 60" ></a-entity>
     </a-scene>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const errorDiv = document.getElementById('ar-error');
+        
+        // Chequeo de compatibilidad mejorado
+        if (!navigator.xr || !navigator.xr.isSessionSupported) {
+          showError('Tu navegador no soporta Realidad Aumentada. Prueba con Chrome en Android 8+');
+          return;
+        }
+
+        // Configuración específica para dispositivos Xiaomi
+        const scene = document.querySelector('a-scene');
+        scene.addEventListener('arjs-nft-loaded', () => {
+          console.log('Marcador cargado correctamente');
+        });
+
+        scene.addEventListener('markerFound', () => {
+          errorDiv.style.display = 'none';
+        });
+
+        scene.addEventListener('markerLost', () => {
+          showError('Marcador perdido. Asegúrate de buena iluminación y enfoque');
+        });
+      });
+
+      function showError(message) {
+        const errorDiv = document.getElementById('ar-error');
+        errorDiv.innerHTML = `${message} <button id="retry-button">Reintentar</button>`;
+        errorDiv.style.display = 'block';
+        
+        document.getElementById('retry-button').addEventListener('click', () => {
+          window.location.reload();
+        });
+      }
+    </script>
   </body>
 </html>
